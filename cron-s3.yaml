@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: mb-cron
+  annotations:
+    description: "Deploys MySQL Backup Cronjob"
+
+parameters:
+  - name: NAME
+    description: "Name of the cronjob"
+    value: "mb-cron"
+  - name: SCHEDULE
+    description: "Schedule for running the cronjob"
+    value: "0 3 * * *"
+  - name: MYSQL_SERVICE
+    description: "Which MySQL service needs to be backed up."
+    value: mariadb
+
+  - name: MYSQL_SECRET
+    description: "Mysql Secret-file to use (usually same as MYSQL_SERVICE)"
+    required: true
+    value:
+  - name: MYSQL_SECRET_USER_KEY
+    description: "Key used in mysql secret file for username"
+    value: "database-user"
+  - name: MYSQL_SECRET_PASS_KEY
+    description: "Key used in mysql secret file for password"
+    value: "database-password"
+
+  - name: AWS_S3_BUCKET
+    description: "s3 bucket for storing the backup file"
+    required: true
+    value:
+  - name: AWS_SECRET
+    description: "Name of the secret where authenication data is stored"
+    required: true
+    value: awsauth
+
+  - name: NOTIFY_SLACK_ENABLED
+    description: "Set to true if you want to use slack notifications"
+    value: "false"
+  - name: NOTIFY_EMAIL_ENABLED
+    description: "Set to true if you want to use email notifications"
+    value: "false"
+  - name: NOTIFY_STDOUT_ENABLED
+    description: "Logs errors to stdout"
+    value: "true"
+  - name: SLACK_API
+    description: "URL to your Slack app."
+    value: "CHANGEME"
+  - name: DEBUG
+    description: "Debugging mode"
+    value: "false"
+
+objects:
+- apiVersion: batch/v1beta1
+  kind: CronJob
+  metadata:
+    name: ${NAME}
+  spec:
+    schedule: ${SCHEDULE}
+    jobTemplate:
+      spec:
+        template:
+          metadata:
+            labels:
+              app: ${NAME}
+          spec:
+            serviceAccount: mysqlbackup
+            containers:
+            - name: ${NAME}
+              image: npohosting/mysql-backup:latest
+              imagePullPolicy: Always
+              env:
+              - name: NAME
+                value: ${NAME}
+              - name: STORAGE_METHOD
+                value: s3
+              - name: MYSQL_SERVICE
+                value: ${MYSQL_SERVICE}
+              - name: DEBUG
+                value: ${DEBUG}
+              - name: NOTIFY_SLACK_ENABLED
+                value: ${NOTIFY_SLACK_ENABLED}
+              - name: NOTIFY_EMAIL_ENABLED
+                value: ${NOTIFY_EMAIL_ENABLED}
+              - name: NOTIFY_STDOUT_ENABLED
+                value: ${NOTIFY_STDOUT_ENABLED}
+              - name: MYSQL_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    key: ${MYSQL_SECRET_PASS_KEY}
+                    name: ${MYSQL_SECRET}
+              - name: MYSQL_USER
+                valueFrom:
+                  secretKeyRef:
+                    key: ${MYSQL_SECRET_USER_KEY}
+                    name: ${MYSQL_SECRET}
+              - name: AWS_S3_BUCKET
+                value: ${AWS_S3_BUCKET}
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    key: aws_access_key_id
+                    name: ${AWS_SECRET}
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    key: aws_secret_access_key
+                    name: ${AWS_SECRET}
+            restartPolicy: Never
