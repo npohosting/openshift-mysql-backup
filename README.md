@@ -12,19 +12,19 @@ The container has several options you can specify, most of them are required:
  Sets the name of the cronjob and service. Only required when you wish to run multiple cronjobs within the same project
 
  - **MYSQL_SERVICE** \
- *Default: empty, is required* \
+ *required* \
  Sets the name of the MySQL service you wish to backup, it also sets the name of the secret used by mysqldump to authenticate
 
  - **MYSQL_SECRET** \
- *Default: empty, is required* \
+ *required* \
  Sets the name of the MySQL secret where the username and password keys reside in.
 
  - **MYSQL_SECRET_USER_KEY** \
- *Default: empty, is required* \
+ *required* \
  Sets the name of the MySQL secret key name for the username.
 
  - **MYSQL_SECRET_PASS_KEY** \
- *Default: empty, is required* \
+ *required* \
  Sets the name of the MySQL secret key name for the password.
 
  - **SCHEDULE** \
@@ -62,7 +62,7 @@ Before we can create the cronjobs, we need to create some secrets storing the id
 
 ### Run the cronjob
 
-``$ oc process -p MYSQL_SERVICE=mariadb -p RSYNC_TARGET_HOST=example.com -p RSYNC_TARGET_LOCATION=mysql-backup -p RSYNC_USER=username -p RSYNC_SECRET_NAME=mysql-backup-ssh-key -p RSYNC_KEY_NAME=mysql_backup -f cron-rsync.yaml | oc create -f -``
+``$ oc process -p MYSQL_SERVICE=mariadb -p RSYNC_TARGET_HOST=example.com -p RSYNC_TARGET_LOCATION=mysql-backup -p RSYNC_USER=username -p RSYNC_SECRET_NAME=mysql-backup-ssh-key -p RSYNC_KEY_NAME=mysql_backup -f https://raw.githubusercontent.com/npohosting/openshift-mysql-backup/master/cron-rsync.yaml | oc create -f -``
 
 ### Delete the cronjob
 ``$ oc process -f cron-rsync.yaml | oc detele -f -``
@@ -85,7 +85,7 @@ Before you can use this method, you will need an Amazon s3 bucket and an account
 
 ### Run the cronjob
 
-``$ oc process -p MYSQL_SERVICE=mariadb -p AWS_S3_BUCKET=my-bucket -f cron-s3.yaml | oc create -f -``
+``$ oc process -p MYSQL_SERVICE=mariadb -p AWS_S3_BUCKET=my-bucket -f https://raw.githubusercontent.com/npohosting/openshift-mysql-backup/master/cron-s3.yaml | oc create -f -``
 
 ### Delete the cronjob
 ``$ oc process -f cron-s3.yaml | oc detele -f -``
